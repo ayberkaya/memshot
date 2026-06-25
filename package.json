@@ -1,22 +1,36 @@
 {
-  "name": "memshot",
+  "name": "@ayberkaya/memshot",
   "version": "0.1.0",
   "description": "Tiered, token-budget-aware memory for any LLM agent",
+  "author": "Ayberk Kaya",
+  "license": "MIT",
+  "homepage": "https://github.com/ayberkaya/memshot#readme",
+  "repository": { "type": "git", "url": "git+https://github.com/ayberkaya/memshot.git" },
+  "bugs": { "url": "https://github.com/ayberkaya/memshot/issues" },
   "type": "module",
   "main": "./dist/index.cjs",
   "module": "./dist/index.js",
   "types": "./dist/index.d.ts",
+  "files": ["dist", "README.md", "LICENSE"],
+  "sideEffects": false,
   "exports": {
     ".": { "types": "./dist/index.d.ts", "import": "./dist/index.js", "require": "./dist/index.cjs" },
     "./adapters/express": { "types": "./dist/adapters/express.d.ts", "import": "./dist/adapters/express.js", "require": "./dist/adapters/express.cjs" },
     "./adapters/next": { "types": "./dist/adapters/next.d.ts", "import": "./dist/adapters/next.js", "require": "./dist/adapters/next.cjs" },
     "./adapters/claude-hook": { "types": "./dist/adapters/claude-hook.d.ts", "import": "./dist/adapters/claude-hook.js", "require": "./dist/adapters/claude-hook.cjs" }
   },
-  "scripts": { "build": "tsup", "test": "vitest run", "test:watch": "vitest", "typecheck": "tsc --noEmit", "dev": "tsup --watch" },
-  "keywords": ["llm", "agent", "memory", "context", "tiered", "token-budget"],
-  "license": "MIT",
+  "scripts": {
+    "build": "tsup",
+    "prepublishOnly": "npm run build",
+    "test": "vitest run",
+    "test:watch": "vitest",
+    "typecheck": "tsc --noEmit",
+    "dev": "tsup --watch",
+    "benchmark": "npx tsx examples/benchmark.ts"
+  },
+  "keywords": ["llm", "agent", "memory", "context", "tiered", "token-budget", "rag", "langchain", "openai", "anthropic"],
   "dependencies": {},
-  "devDependencies": { "typescript": "^5.5.0", "tsup": "^8.2.0", "vitest": "^2.0.0", "@types/node": "^22.0.0" },
+  "devDependencies": { "typescript": "^5.5.0", "tsup": "^8.2.0", "vitest": "^2.0.0", "@types/node": "^22.0.0", "tsx": "^4.0.0" },
   "peerDependencies": { "gpt-tokenizer": "^2.0.0" },
   "peerDependenciesMeta": { "gpt-tokenizer": { "optional": true } }
 }

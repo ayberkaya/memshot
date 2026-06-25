@@ -1,7 +1,7 @@
 # memshot
 
-[![npm version](https://img.shields.io/npm/v/memshot)](https://www.npmjs.com/package/memshot)
-[![license](https://img.shields.io/npm/l/memshot)](./LICENSE)
+[![npm version](https://img.shields.io/npm/v/%40ayberkaya%2Fmemshot)](https://www.npmjs.com/package/@ayberkaya/memshot)
+[![license](https://img.shields.io/npm/l/%40ayberkaya%2Fmemshot)](./LICENSE)
 
 Your agent's memory shouldn't cost 15,000 tokens before the user says hello.
 
@@ -34,11 +34,11 @@ flowchart LR
 ### Quick Start
 
 ```bash
-npm install memshot
+npm install @ayberkaya/memshot
 ```
 
 ```ts
-import { Memory, fileStore } from "memshot"
+import { Memory, fileStore } from "@ayberkaya/memshot"
 
 const mem = new Memory({ budget: 4000, store: fileStore("./memories") })
 
@@ -126,7 +126,7 @@ Returns `Promise<ResolveResult>`.
 #### Express middleware
 
 ```ts
-import { memshotMiddleware } from "memshot/adapters/express"
+import { memshotMiddleware } from "@ayberkaya/memshot/adapters/express"
 
 app.use(memshotMiddleware(mem, {
   getPrompt: (req) => req.body.messages.at(-1)?.content ?? "",
@@ -141,7 +141,7 @@ app.post("/chat", (req, res) => {
 #### Next.js route handler
 
 ```ts
-import { withMemshot } from "memshot/adapters/next"
+import { withMemshot } from "@ayberkaya/memshot/adapters/next"
 
 export const POST = withMemshot(mem, async (req, { memshot }) => {
   const systemPrefix = memshot.text
@@ -152,7 +152,7 @@ export const POST = withMemshot(mem, async (req, { memshot }) => {
 #### Claude Code hook (UserPromptSubmit)
 
 ```ts
-import { createClaudeHook } from "memshot/adapters/claude-hook"
+import { createClaudeHook } from "@ayberkaya/memshot/adapters/claude-hook"
 
 const hook = createClaudeHook(mem)
 await hook.run()
