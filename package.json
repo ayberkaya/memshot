@@ -1,0 +1,22 @@
+{
+  "name": "memshot",
+  "version": "0.1.0",
+  "description": "Tiered, token-budget-aware memory for any LLM agent",
+  "type": "module",
+  "main": "./dist/index.cjs",
+  "module": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "exports": {
+    ".": { "types": "./dist/index.d.ts", "import": "./dist/index.js", "require": "./dist/index.cjs" },
+    "./adapters/express": { "types": "./dist/adapters/express.d.ts", "import": "./dist/adapters/express.js", "require": "./dist/adapters/express.cjs" },
+    "./adapters/next": { "types": "./dist/adapters/next.d.ts", "import": "./dist/adapters/next.js", "require": "./dist/adapters/next.cjs" },
+    "./adapters/claude-hook": { "types": "./dist/adapters/claude-hook.d.ts", "import": "./dist/adapters/claude-hook.js", "require": "./dist/adapters/claude-hook.cjs" }
+  },
+  "scripts": { "build": "tsup", "test": "vitest run", "test:watch": "vitest", "typecheck": "tsc --noEmit", "dev": "tsup --watch" },
+  "keywords": ["llm", "agent", "memory", "context", "tiered", "token-budget"],
+  "license": "MIT",
+  "dependencies": {},
+  "devDependencies": { "typescript": "^5.5.0", "tsup": "^8.2.0", "vitest": "^2.0.0", "@types/node": "^22.0.0" },
+  "peerDependencies": { "gpt-tokenizer": "^2.0.0" },
+  "peerDependenciesMeta": { "gpt-tokenizer": { "optional": true } }
+}
