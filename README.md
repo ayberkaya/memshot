@@ -82,25 +82,29 @@ Zero runtime dependencies. Optional: `npm install gpt-tokenizer` for exact token
 ## Quickstart
 
 ```ts
+import OpenAI from "openai"
 import { Memory, fileStore } from "@ayberkaya/memshot"
 
 const mem = new Memory({ budget: 4000, store: fileStore("./memories") })
+const openai = new OpenAI()
 
-// Add memories to tiers
+// Store memories once (or incrementally as your agent runs)
 await mem.add({ content: "User's name is Ayberk. Prefers TypeScript.", tier: "hot" })
 await mem.add({ content: "Billing: ship Stripe subscriptions first, add metering later.", tier: "warm", triggers: [/billing|pricing/i] })
 await mem.add({ content: "Meeting 2026-06-20: decided to delay enterprise tier until Q3.", tier: "cold" })
 
-// Resolve against the current prompt — returns only what fits in budget
-const { text, tokensUsed, tiersUsed } = await mem.resolve(userPrompt, { sessionId: "abc123" })
+// On every chat turn: resolve selects only what fits in the token budget
+async function chat(userMessage: string, sessionId: string) {
+  const { text, tokensUsed } = await mem.resolve(userMessage, { sessionId })
 
-// Prepend to your system prompt
-const response = await openai.chat.completions.create({
-  messages: [
-    { role: "system", content: `${text}\n\n${yourSystemPrompt}` },
-    { role: "user", content: userPrompt }
-  ]
-})
+  return openai.chat.completions.create({
+    model: "gpt-4o",
+    messages: [
+      { role: "system", content: `${text}\n\nYou are a helpful assistant.` },
+      { role: "user", content: userMessage }
+    ]
+  })
+}
 ```
 
 `fileStore` persists to disk as JSON files. For in-process use, tests, and edge functions: swap in `memoryStore()`.
@@ -125,8 +129,8 @@ Run it yourself:
 
 ```bash
 git clone https://github.com/ayberkaya/memshot
-cd memshot && npm install
-npm run benchmark
+cd memshot && bun install
+bun run benchmark
 ```
 
 ---
