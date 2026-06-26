@@ -232,19 +232,56 @@ await mem.clear()
 
 ## CLI
 
-```bash
-npx memshot add "User prefers concise answers." --tier hot
-npx memshot add "Billing rules: ..." --tier warm --trigger "/billing/i"
-npx memshot list
-npx memshot resolve "what are the billing rules?" --budget 4000 --trace
-npx memshot stats
-npx memshot delete <id>
-npx memshot clear
+```
+$ npx memshot add "User prefers TypeScript strict mode." --tier hot
+added  1782466602860-g6e4cu  [hot]
+
+$ npx memshot add "Billing: ship Stripe first, metering later." --tier warm --trigger "/billing/i"
+added  1782466603120-h7f2ab  [warm]
+
+$ npx memshot list
+ID                    TIER    TOKENS   CONTENT
+────────────────────────────────────────────────────────────────────────────────
+1782466602860-g6e4cu  hot     6        User prefers TypeScript strict mode.
+1782466603120-h7f2ab  warm    8        Billing: ship Stripe first, metering later.
+
+$ npx memshot resolve "what are the billing rules?" --budget 4000 --trace
+tokens used: 14 / 4000
+tiers:      hot=1 warm=1 cold=0
+dropped:    warm=0 cold=0
+
+selected:
+  1782466602860-g6e4cu  [hot]   User prefers TypeScript strict mode.
+  1782466603120-h7f2ab  [warm]  Billing: ship Stripe first, metering later.
+
+ID                    TIER    INC  TOKENS   COMPOSITE   REASON
+──────────────────────────────────────────────────────────────────────────────────────────
+1782466602860-g6e4cu  hot     ✓    6        —           always injected
+1782466603120-h7f2ab  warm    ✓    8        —           trigger matched, fit budget
+
+$ npx memshot stats
+total: 2 memories
+
+  hot   1 items    6 tokens
+  warm  1 items    8 tokens
+  cold  0 items    0 tokens
+
+tokens:  total=14  avg=7.0
+oldest:  1782466602860-g6e4cu  (2026-06-26T...)
+newest:  1782466603120-h7f2ab  (2026-06-26T...)
 ```
 
 `--trace` prints a table with id, tier, ✓/✗, tokens, composite score, and reason for every considered item.
 
 Persistence: `MEMSHOT_DIR` env var (default `./.memshot`).
+
+---
+
+## Web playground
+
+**[Live demo →](https://ayberkaya.github.io/memshot/playground/)**
+
+Or open `playground/index.html` locally — no build step, no server, no npm install.
 
 ---
 

@@ -138,7 +138,7 @@ export async function run(argv: string[]): Promise<number> {
           ...(tags.length > 0 && { tags }),
         })
 
-        console.log(`${G}added${R}  ${C}${item.id.slice(0, 12)}${R}  [${tierLabel(tier)}]`)
+        console.log(`${G}added${R}  ${C}${item.id}${R}  [${tierLabel(tier)}]`)
         return 0
       }
 
@@ -159,12 +159,12 @@ export async function run(argv: string[]): Promise<number> {
           return 0
         }
 
-        console.log(`${C}${col("ID", 12)}  ${col("TIER", 6)}  ${col("TOKENS", 7)}  CONTENT${R}`)
+        console.log(`${C}${col("ID", 20)}  ${col("TIER", 6)}  ${col("TOKENS", 7)}  CONTENT${R}`)
         console.log("─".repeat(80))
         for (const item of items) {
           const tokens = tokenizer.count(item.content)
-          const preview = item.content.slice(0, 50).replace(/\n/g, " ")
-          console.log(`${col(item.id, 12)}  ${col(item.tier, 6)}  ${col(String(tokens), 7)}  ${preview}`)
+          const preview = item.content.slice(0, 42).replace(/\n/g, " ")
+          console.log(`${col(item.id, 20)}  ${col(item.tier, 6)}  ${col(String(tokens), 7)}  ${preview}`)
         }
         return 0
       }
@@ -201,7 +201,7 @@ export async function run(argv: string[]): Promise<number> {
           console.log(`\n${G}selected:${R}`)
           for (const item of result.items) {
             const preview = item.content.slice(0, 60).replace(/\n/g, " ")
-            console.log(`  ${C}${item.id.slice(0, 12)}${R}  [${tierLabel(item.tier)}]  ${preview}`)
+            console.log(`  ${C}${item.id}${R}  [${tierLabel(item.tier)}]  ${preview}`)
           }
         }
 
