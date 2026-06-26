@@ -1,4 +1,4 @@
-import { Memory, memoryStore } from "../src/index.ts"
+import { Memory, memoryStore, defaultTokenizer } from "../src/index.ts"
 
 const testPrompt = "We discussed the billing integration last week, what did we decide about the pricing model?"
 
@@ -102,7 +102,8 @@ function row(label: string, naive: string, memshot: string, savings: string): st
 
 async function main(): Promise<void> {
   try {
-    const mem = new Memory({ budget: 4000, store: memoryStore() })
+    const tokenizer = defaultTokenizer()
+    const mem = new Memory({ budget: 4000, store: memoryStore(), tokenizer })
     const contents: string[] = []
 
     for (const content of hotItems) {
@@ -122,9 +123,11 @@ async function main(): Promise<void> {
     }
 
     const result = await mem.resolve(testPrompt, { sessionId: "bench" })
-    const naiveTokens = contents.reduce((total, content) => total + Math.ceil(content.length / 4), 0)
+    const naiveTokens = contents.reduce((total, content) => total + tokenizer.count(content), 0)
+    const tokenizerLabel = naiveTokens > 0 ? "gpt-tokenizer cl100k" : "heuristic (length/4)"
+
     const lines = [
-      "memshot benchmark — 500 memories, 4000-token budget",
+      `memshot benchmark — 500 memories, 4000-token budget (${tokenizerLabel})`,
       "─────────────────────────────────────────────────",
       row("", "naive", "memshot", "savings"),
       row("items", formatNumber(contents.length), formatNumber(result.items.length), reduction(contents.length, result.items.length)),

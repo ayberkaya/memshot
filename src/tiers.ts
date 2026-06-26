@@ -1,5 +1,5 @@
 import type { ScoredItem } from "./budget.js"
-import { bm25Score } from "./ranking/bm25.js"
+import { buildCorpus, scoreCorpus } from "./ranking/bm25.js"
 import { frecencyScore } from "./ranking/frecency.js"
 import type { SessionLedger } from "./session.js"
 import type { MemoryItem } from "./store/index.js"
@@ -42,7 +42,8 @@ export function resolveWarm(items: MemoryItem[], prompt: string): MemoryItem[] {
 
 export function resolveCold(items: MemoryItem[], query: string, now: number): ScoredItem[] {
   const cold = items.filter((item) => item.tier === "cold")
-  const bm25Scores = cold.map((item) => bm25Score(query, item.content))
+  const corpus = buildCorpus(cold.map((item) => item.content))
+  const bm25Scores = scoreCorpus(query, corpus)
   const frecencyScores = cold.map((item) => frecencyScore({
     accessCount: item.accessCount,
     lastAccessedAt: item.lastAccessedAt,
@@ -53,10 +54,18 @@ export function resolveCold(items: MemoryItem[], query: string, now: number): Sc
   const normalizedFrecency = normalize(frecencyScores)
 
   return cold
-    .map((item, index) => ({
-      item,
-      score: 0.6 * (normalizedBm25[index] ?? 0) + 0.4 * (normalizedFrecency[index] ?? 0),
-      tokens: 0
-    }))
+    .map((item, index) => {
+      const bm25 = bm25Scores[index] ?? 0
+      const bm25Normalized = normalizedBm25[index] ?? 0
+      const frecency = frecencyScores[index] ?? 0
+      const frecencyNormalized = normalizedFrecency[index] ?? 0
+      const composite = 0.6 * bm25Normalized + 0.4 * frecencyNormalized
+      return {
+        item,
+        score: composite,
+        tokens: 0,
+        breakdown: { bm25, bm25Normalized, frecency, frecencyNormalized, composite }
+      }
+    })
     .sort((left, right) => right.score - left.score)
 }

@@ -1,0 +1,411 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>memshot playground</title>
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0 }
+    body {
+      background: #0d0d0d; color: #d4d4d4;
+      font-family: Monaco, Menlo, Consolas, monospace;
+      font-size: 13px; line-height: 1.55; min-height: 100vh;
+    }
+    #status-bar {
+      background: #111; border-bottom: 1px solid #2a2a2a;
+      padding: 6px 16px; display: flex; align-items: center;
+      gap: 20px; font-size: 12px; color: #888; flex-wrap: wrap;
+    }
+    #status-bar .label { color: #555 }
+    #status-bar .val   { color: #d4d4d4 }
+    #status-bar .note  { margin-left: auto; color: #444; font-size: 11px }
+    .badge { display: inline-block; padding: 1px 6px; border-radius: 3px;
+             font-size: 11px; font-weight: bold; color: #0d0d0d }
+    .badge-hot  { background: #ff6b6b }
+    .badge-warm { background: #ffa94d }
+    .badge-cold { background: #74c0fc }
+    #layout { display: flex; height: calc(100vh - 33px); overflow: hidden }
+    #left-panel { width: 40%; border-right: 1px solid #1e1e1e;
+                  display: flex; flex-direction: column; overflow: hidden }
+    #right-panel { width: 60%; display: flex; flex-direction: column; overflow: hidden }
+    .panel-header { background: #111; border-bottom: 1px solid #1e1e1e;
+                    padding: 8px 14px; font-size: 11px; color: #555;
+                    text-transform: uppercase; letter-spacing: 0.08em }
+    .panel-body { padding: 14px; overflow-y: auto; flex: 1 }
+    .field { margin-bottom: 12px }
+    .field label { display: block; color: #666; font-size: 11px; margin-bottom: 4px;
+                   text-transform: uppercase; letter-spacing: 0.06em }
+    textarea, input[type="text"], input[type="number"], select {
+      width: 100%; background: #111; color: #d4d4d4;
+      border: 1px solid #2a2a2a; padding: 6px 8px;
+      font-family: inherit; font-size: 13px; outline: none; resize: vertical;
+    }
+    textarea:focus, input:focus, select:focus { border-color: #444 }
+    textarea { min-height: 72px }
+    .checkbox-row { display: flex; align-items: center; gap: 8px;
+                    color: #888; font-size: 12px }
+    input[type="checkbox"] { accent-color: #d4d4d4; width: 14px; height: 14px }
+    button { background: #222; color: #fff; border: 1px solid #444;
+             padding: 6px 14px; font-family: inherit; font-size: 13px; cursor: pointer }
+    button:hover { background: #2a2a2a }
+    button:active { background: #1a1a1a }
+    .btn-row { display: flex; gap: 8px; margin-top: 4px }
+    .error-msg { color: #ff6b6b; font-size: 12px; margin-top: 6px; min-height: 16px }
+    #memory-list { margin-top: 16px; border-top: 1px solid #1e1e1e; padding-top: 12px }
+    .memory-list-header { font-size: 11px; color: #555; text-transform: uppercase;
+                          letter-spacing: 0.06em; margin-bottom: 8px }
+    .memory-row { display: flex; align-items: flex-start; gap: 8px; padding: 5px 0;
+                  border-bottom: 1px solid #161616; font-size: 12px }
+    .memory-row:last-child { border-bottom: none }
+    .memory-id { color: #555; flex-shrink: 0; width: 90px }
+    .memory-preview { color: #aaa; flex: 1; overflow: hidden;
+                      text-overflow: ellipsis; white-space: nowrap }
+    .memory-del { background: none; border: none; color: #444; cursor: pointer;
+                  padding: 0 4px; font-size: 14px; line-height: 1; flex-shrink: 0 }
+    .memory-del:hover { color: #ff6b6b; background: none }
+    .resolve-output { margin-top: 12px }
+    .output-section { margin-bottom: 16px }
+    .output-label { font-size: 11px; color: #555; text-transform: uppercase;
+                    letter-spacing: 0.06em; margin-bottom: 6px }
+    .stats-row { display: flex; gap: 16px; flex-wrap: wrap; margin-bottom: 10px }
+    .stat { color: #888; font-size: 12px }
+    .stat span { color: #d4d4d4 }
+    .selected-item { background: #111; border: 1px solid #1e1e1e;
+                     padding: 6px 10px; margin-bottom: 6px; font-size: 12px }
+    .selected-item-meta { display: flex; gap: 8px; align-items: center; margin-bottom: 4px }
+    .selected-item-id { color: #555 }
+    .selected-item-content { color: #aaa }
+    .trace-table { width: 100%; border-collapse: collapse; font-size: 11px }
+    .trace-table th { text-align: left; color: #555; border-bottom: 1px solid #2a2a2a;
+                      padding: 4px 6px; font-weight: normal;
+                      text-transform: uppercase; letter-spacing: 0.05em }
+    .trace-table td { padding: 3px 6px; border-bottom: 1px solid #161616; color: #888 }
+    .trace-table .inc-yes { color: #4caf50 }
+    .trace-table .inc-no  { color: #ff6b6b }
+    .trace-table .reason  { color: #666 }
+    .empty-state { color: #444; font-size: 12px; padding: 8px 0 }
+    ::-webkit-scrollbar { width: 6px }
+    ::-webkit-scrollbar-track { background: #0d0d0d }
+    ::-webkit-scrollbar-thumb { background: #2a2a2a }
+  </style>
+</head>
+<body>
+
+<div id="status-bar">
+  <span class="label">hot</span> <span class="val" id="st-hot">0</span>
+  <span class="label">warm</span> <span class="val" id="st-warm">0</span>
+  <span class="label">cold</span> <span class="val" id="st-cold">0</span>
+  <span class="label">total</span> <span class="val" id="st-total">0</span>
+  <span class="label">budget</span> <span class="val" id="st-budget">4000</span>
+  <span class="note">Token counts use heuristic (chars/4)</span>
+</div>
+
+<div id="layout">
+  <div id="left-panel">
+    <div class="panel-header">Add Memory</div>
+    <div class="panel-body">
+      <div class="field">
+        <label>Content</label>
+        <textarea id="inp-content" placeholder="Memory content..."></textarea>
+      </div>
+      <div class="field">
+        <label>Tier</label>
+        <select id="inp-tier">
+          <option value="warm">warm</option>
+          <option value="hot">hot</option>
+          <option value="cold">cold</option>
+        </select>
+      </div>
+      <div class="field">
+        <label>Triggers <span style="color:#444;font-size:11px">(comma-separated, e.g. /keyword/i, /other/gi)</span></label>
+        <input type="text" id="inp-triggers" placeholder="/keyword/i, /another/gi">
+      </div>
+      <div class="field">
+        <div class="checkbox-row">
+          <input type="checkbox" id="inp-once">
+          <label for="inp-once" style="text-transform:none;letter-spacing:0">once (hot tier)</label>
+        </div>
+      </div>
+      <div class="btn-row">
+        <button id="btn-add">Add Memory</button>
+        <button id="btn-clear" style="color:#888">Clear All</button>
+      </div>
+      <div class="error-msg" id="add-error"></div>
+      <div id="memory-list">
+        <div class="memory-list-header">Stored Memories</div>
+        <div id="memory-items"><div class="empty-state">no memories yet</div></div>
+      </div>
+    </div>
+  </div>
+
+  <div id="right-panel">
+    <div class="panel-header">Resolve</div>
+    <div class="panel-body">
+      <div class="field">
+        <label>Prompt</label>
+        <input type="text" id="inp-prompt" placeholder="Enter prompt to resolve memories...">
+      </div>
+      <div style="display:flex;gap:12px;align-items:flex-end;margin-bottom:12px">
+        <div class="field" style="margin:0;flex:1">
+          <label>Budget (tokens)</label>
+          <input type="number" id="inp-budget" value="4000" min="1" max="100000">
+        </div>
+        <div class="checkbox-row" style="margin-bottom:1px">
+          <input type="checkbox" id="inp-trace">
+          <label for="inp-trace" style="text-transform:none;letter-spacing:0">show trace</label>
+        </div>
+      </div>
+      <div class="btn-row">
+        <button id="btn-resolve">Resolve</button>
+      </div>
+      <div class="error-msg" id="resolve-error"></div>
+      <div class="resolve-output" id="resolve-output" style="display:none">
+        <div class="output-section">
+          <div class="output-label">Result</div>
+          <div class="stats-row">
+            <div class="stat">tokens used <span id="out-tokens">0</span></div>
+            <div class="stat">hot <span id="out-hot">0</span></div>
+            <div class="stat">warm <span id="out-warm">0</span></div>
+            <div class="stat">cold <span id="out-cold">0</span></div>
+            <div class="stat">dropped warm <span id="out-drop-warm">0</span></div>
+            <div class="stat">dropped cold <span id="out-drop-cold">0</span></div>
+          </div>
+        </div>
+        <div class="output-section">
+          <div class="output-label">Selected Items</div>
+          <div id="out-items"></div>
+        </div>
+        <div class="output-section" id="trace-section" style="display:none">
+          <div class="output-label">Trace</div>
+          <table class="trace-table">
+            <thead>
+              <tr>
+                <th>ID</th><th>Tier</th><th>Inc</th>
+                <th>Tokens</th><th>Composite</th><th>Reason</th>
+              </tr>
+            </thead>
+            <tbody id="trace-body"></tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script type="module">
+import { Memory, memoryStore } from '../dist/index.js'
+
+const store = memoryStore()
+let budget = 4000
+
+function getMem() {
+  return new Memory({ budget, store })
+}
+
+function heuristic(text) {
+  return Math.ceil(text.length / 4)
+}
+
+function parseTriggers(raw) {
+  if (!raw.trim()) return []
+  return raw.split(',').map(s => {
+    const t = s.trim()
+    if (!t) return null
+    const m = t.match(/^\/(.+)\/([gimsuy]*)$/)
+    if (!m) throw new Error('Invalid trigger: ' + t + '  (use /pattern/flags format)')
+    return new RegExp(m[1], m[2])
+  }).filter(Boolean)
+}
+
+function tierBadge(tier) {
+  return '<span class="badge badge-' + tier + '">' + tier + '</span>'
+}
+
+async function refreshStatus() {
+  const items = await store.list()
+  const hot  = items.filter(i => i.tier === 'hot').length
+  const warm = items.filter(i => i.tier === 'warm').length
+  const cold = items.filter(i => i.tier === 'cold').length
+  document.getElementById('st-hot').textContent   = hot
+  document.getElementById('st-warm').textContent  = warm
+  document.getElementById('st-cold').textContent  = cold
+  document.getElementById('st-total').textContent = items.length
+  document.getElementById('st-budget').textContent = budget
+}
+
+async function refreshMemoryList() {
+  const items = await store.list()
+  const container = document.getElementById('memory-items')
+  if (items.length === 0) {
+    container.innerHTML = '<div class="empty-state">no memories yet</div>'
+    return
+  }
+  container.innerHTML = items.map(item => {
+    const preview = item.content.slice(0, 50).replace(/\n/g, ' ')
+    const tokens = heuristic(item.content)
+    return '<div class="memory-row">' +
+      '<span class="memory-id">' + item.id.slice(0, 12) + '</span>' +
+      tierBadge(item.tier) +
+      '<span class="memory-preview" title="' + item.content.replace(/"/g, '&quot;') + '">' +
+        preview + '</span>' +
+      '<span class="memory-del" data-id="' + item.id + '" title="delete">&times;</span>' +
+      '</div>'
+  }).join('')
+
+  container.querySelectorAll('.memory-del').forEach(btn => {
+    btn.addEventListener('click', async () => {
+      try {
+        const mem = getMem()
+        await mem.delete(btn.dataset.id)
+        await refreshMemoryList()
+        await refreshStatus()
+      } catch (e) {
+        document.getElementById('add-error').textContent = e.message
+      }
+    })
+  })
+}
+
+// Add Memory handler
+document.getElementById('btn-add').addEventListener('click', async () => {
+  const errEl = document.getElementById('add-error')
+  errEl.textContent = ''
+  const content = document.getElementById('inp-content').value.trim()
+  if (!content) { errEl.textContent = 'content is required'; return }
+
+  const tier = document.getElementById('inp-tier').value
+  const triggersRaw = document.getElementById('inp-triggers').value
+  const once = document.getElementById('inp-once').checked
+
+  let triggers = []
+  try {
+    triggers = parseTriggers(triggersRaw)
+  } catch (e) {
+    errEl.textContent = e.message
+    return
+  }
+
+  try {
+    const mem = getMem()
+    await mem.add({
+      content,
+      tier,
+      ...(triggers.length > 0 && { triggers }),
+      ...(once && { once }),
+    })
+    document.getElementById('inp-content').value = ''
+    document.getElementById('inp-triggers').value = ''
+    document.getElementById('inp-once').checked = false
+    await refreshMemoryList()
+    await refreshStatus()
+  } catch (e) {
+    errEl.textContent = e.message
+  }
+})
+
+// Clear All handler
+document.getElementById('btn-clear').addEventListener('click', async () => {
+  if (!confirm('Clear all memories?')) return
+  try {
+    const mem = getMem()
+    await mem.clear()
+    document.getElementById('resolve-output').style.display = 'none'
+    await refreshMemoryList()
+    await refreshStatus()
+  } catch (e) {
+    document.getElementById('add-error').textContent = e.message
+  }
+})
+
+// Budget change
+document.getElementById('inp-budget').addEventListener('change', (e) => {
+  const v = parseInt(e.target.value, 10)
+  if (!isNaN(v) && v > 0) {
+    budget = v
+    document.getElementById('st-budget').textContent = budget
+  }
+})
+
+// Resolve handler
+document.getElementById('btn-resolve').addEventListener('click', async () => {
+  const errEl = document.getElementById('resolve-error')
+  errEl.textContent = ''
+  const prompt = document.getElementById('inp-prompt').value.trim()
+  if (!prompt) { errEl.textContent = 'prompt is required'; return }
+
+  const b = parseInt(document.getElementById('inp-budget').value, 10)
+  if (!isNaN(b) && b > 0) budget = b
+
+  const trace = document.getElementById('inp-trace').checked
+
+  try {
+    const mem = getMem()
+    const result = await mem.resolve(prompt, { trace })
+
+    document.getElementById('out-tokens').textContent   = result.tokensUsed + ' / ' + budget
+    document.getElementById('out-hot').textContent      = result.tiersUsed.hot
+    document.getElementById('out-warm').textContent     = result.tiersUsed.warm
+    document.getElementById('out-cold').textContent     = result.tiersUsed.cold
+    document.getElementById('out-drop-warm').textContent = result.dropped.warm
+    document.getElementById('out-drop-cold').textContent = result.dropped.cold
+
+    const itemsEl = document.getElementById('out-items')
+    if (result.items.length === 0) {
+      itemsEl.innerHTML = '<div class="empty-state">no memories selected</div>'
+    } else {
+      itemsEl.innerHTML = result.items.map(item => {
+        const tokens = heuristic(item.content)
+        return '<div class="selected-item">' +
+          '<div class="selected-item-meta">' +
+            '<span class="selected-item-id">' + item.id.slice(0, 12) + '</span>' +
+            tierBadge(item.tier) +
+            '<span style="color:#555;font-size:11px">' + tokens + ' tokens</span>' +
+          '</div>' +
+          '<div class="selected-item-content">' +
+            item.content.slice(0, 200).replace(/</g, '&lt;').replace(/>/g, '&gt;') +
+          '</div>' +
+        '</div>'
+      }).join('')
+    }
+
+    const traceSection = document.getElementById('trace-section')
+    if (trace && result.trace) {
+      const rows = result.trace.entries.map(entry => {
+        const composite = entry.scores && entry.scores.composite != null
+          ? entry.scores.composite.toFixed(3)
+          : '—'
+        const incClass = entry.included ? 'inc-yes' : 'inc-no'
+        const incChar  = entry.included ? '&#10003;' : '&#10007;'
+        return '<tr>' +
+          '<td>' + entry.id.slice(0, 12) + '</td>' +
+          '<td>' + tierBadge(entry.tier) + '</td>' +
+          '<td class="' + incClass + '">' + incChar + '</td>' +
+          '<td>' + entry.tokens + '</td>' +
+          '<td>' + composite + '</td>' +
+          '<td class="reason">' + entry.reason + '</td>' +
+        '</tr>'
+      }).join('')
+      document.getElementById('trace-body').innerHTML = rows
+      traceSection.style.display = 'block'
+    } else {
+      traceSection.style.display = 'none'
+    }
+
+    document.getElementById('resolve-output').style.display = 'block'
+  } catch (e) {
+    errEl.textContent = e.message
+  }
+})
+
+// Allow Enter key on prompt input
+document.getElementById('inp-prompt').addEventListener('keydown', (e) => {
+  if (e.key === 'Enter') document.getElementById('btn-resolve').click()
+})
+
+// Init
+refreshMemoryList()
+refreshStatus()
+</script>
+
+</body>
+</html>

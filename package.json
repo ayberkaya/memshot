@@ -1,6 +1,6 @@
 {
   "name": "@ayberkaya/memshot",
-  "version": "0.1.0",
+  "version": "0.2.0",
   "description": "Tiered, token-budget-aware memory for any LLM agent",
   "author": "Ayberk Kaya",
   "license": "MIT",
@@ -11,6 +11,7 @@
   "main": "./dist/index.cjs",
   "module": "./dist/index.js",
   "types": "./dist/index.d.ts",
+  "bin": { "memshot": "./dist/cli.cjs" },
   "files": ["dist", "README.md", "LICENSE"],
   "sideEffects": false,
   "exports": {
@@ -30,7 +31,14 @@
   },
   "keywords": ["llm", "agent", "memory", "context", "tiered", "token-budget", "rag", "langchain", "openai", "anthropic"],
   "dependencies": {},
-  "devDependencies": { "typescript": "^5.5.0", "tsup": "^8.2.0", "vitest": "^2.0.0", "@types/node": "^22.0.0", "tsx": "^4.0.0" },
+  "devDependencies": {
+    "typescript": "^5.5.0",
+    "tsup": "^8.2.0",
+    "vitest": "^2.0.0",
+    "@types/node": "^22.0.0",
+    "tsx": "^4.0.0",
+    "gpt-tokenizer": "^2.0.0"
+  },
   "peerDependencies": { "gpt-tokenizer": "^2.0.0" },
   "peerDependenciesMeta": { "gpt-tokenizer": { "optional": true } }
 }

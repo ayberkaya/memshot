@@ -4,3 +4,4 @@ dist/
 .env
 .bun-cache/
 .tmp/
+.memshot/
